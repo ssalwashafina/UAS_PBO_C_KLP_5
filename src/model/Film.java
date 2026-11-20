@@ -58,3 +58,44 @@ public class Film implements Comparable<Film> {
     public int getDurasi() {
         return durasi;
     }
+// Mengambil durasi.
+    public int getDurasi() {
+        return durasi;
+    }
+
+    // Mengubah durasi.
+    public void setDurasi(int durasi) {
+        if (durasi <= 0) {
+            throw new IllegalArgumentException("Durasi harus lebih dari 0 menit.");
+        }
+        this.durasi = durasi;
+    }
+
+    // Mengambil rating usia.
+    public int getRatingUsia() {
+        return ratingUsia;
+        }
+
+    // Mengubah rating usia.
+    public void setRatingUsia(int ratingUsia) {
+        if (ratingUsia < 0) {
+            throw new IllegalArgumentException("Rating usia tidak boleh negatif.");
+        }
+        this.ratingUsia = ratingUsia;
+    }
+
+    // Mengambil rating usia dalam bentuk teks.
+    public String getLabelRating() {
+        return ratingUsia == 0 ? "SU" : ratingUsia + "+";
+    }
+
+    @Override
+    public int compareTo(Film lain) {
+        return judul.compareToIgnoreCase(lain.judul);
+    }
+
+    @Override
+    public String toString() {
+        return id + " - " + judul + " (" + genre + ", " + durasi + " menit, " + getLabelRating() + ")";
+    }
+}
