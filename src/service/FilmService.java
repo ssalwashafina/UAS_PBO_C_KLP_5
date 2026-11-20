@@ -42,3 +42,68 @@ public class FilmService implements CrudService<Film, String> {
         daftar.add(film);
     }
 
+    // Mengubah film. Nilai baru disalin ke film lama supaya jadwal yang menunjuk film itu ikut berubah.
+    @Override
+    public void ubah(Film dataBaru) throws DataTidakDitemukanException, DataSedangDipakaiException {
+        Film lama = cariById(dataBaru.getId());
+        if (lama.getDurasi() != dataBaru.getDurasi() && jadwalService != null
+                && jadwalService.adaJadwalUntukFilm(lama.getId())) {
+            throw new DataSedangDipakaiException("Durasi tidak bisa diubah karena film ini masih punya jadwal.");
+        }
+        lama.setJudul(dataBaru.getJudul());
+        lama.setGenre(dataBaru.getGenre());
+        lama.setDurasi(dataBaru.getDurasi());
+        lama.setRatingUsia(dataBaru.getRatingUsia());
+    }
+
+    @Override
+    public void hapus(String id) throws DataTidakDitemukanException, DataSedangDipakaiException {
+        Film film = cariById(id);
+        if (jadwalService != null && jadwalService.adaJadwalUntukFilm(id)) {
+            throw new DataSedangDipakaiException("Film \"" + film.getJudul()
+                    + "\" masih punya jadwal tayang. Hapus jadwalnya dulu.");
+        }
+        daftar.remove(film);
+    }
+
+    @Override
+    public Film cariById(String id) throws DataTidakDitemukanException {
+        for (Film f : daftar) {
+            if (f.getId().equalsIgnoreCase(id)) {
+                return f;
+            }
+        }
+        throw new DataTidakDitemukanException("Film", id);
+    }
+
+    @Override
+    public List<Film> getAll() {
+        return new ArrayList<>(daftar);
+    }
+
+    // Mencari film yang judul atau genrenya memuat kata kunci.
+    public List<Film> cari(String kataKunci) {
+        String kunci = kataKunci.toLowerCase();
+        List<Film> hasil = new ArrayList<>();
+        for (Film f : daftar) {
+            if (f.getJudul().toLowerCase().contains(kunci) || f.getGenre().toLowerCase().contains(kunci)) {
+                hasil.add(f);
+            }
+        }
+        return hasil;
+    }
+
+    // Mengurutkan film berdasarkan judul (urutan alami Film).
+    public List<Film> urutkanJudul() {
+        List<Film> hasil = getAll();
+        Collections.sort(hasil);
+        return hasil;
+    }
+
+    // Mengurutkan film dari durasi terpendek.
+    public List<Film> urutkanDurasi() {
+        List<Film> hasil = getAll();
+        hasil.sort(Film.BERDASARKAN_DURASI);
+        return hasil;
+    }
+}
