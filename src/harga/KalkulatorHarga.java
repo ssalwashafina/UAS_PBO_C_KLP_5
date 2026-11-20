@@ -23,3 +23,25 @@ public class KalkulatorHarga {
     public void tambahAturan(HargaStrategy strategi) {
         aturan.add(strategi);
     }
+
+    // Menghitung harga satu kursi untuk sebuah jadwal, dibulatkan ke Rp500 terdekat.
+    public double hargaPerKursi(Jadwal jadwal) {
+        double harga = jadwal.getHargaDasar();
+        for (HargaStrategy s : aturan) {
+            if (s.berlaku(jadwal)) {
+                harga = s.sesuaikan(jadwal, harga);
+            }
+        }
+        return Math.round(harga / 500.0) * 500.0;
+    }
+
+    // Mengambil nama aturan yang sedang berlaku untuk sebuah jadwal.
+    public List<String> aturanBerlaku(Jadwal jadwal) {
+        List<String> hasil = new ArrayList<>();
+        for (HargaStrategy s : aturan) {
+            if (s.berlaku(jadwal)) {
+                hasil.add(s.getNama());
+            }
+        }
+        return hasil;
+    }
