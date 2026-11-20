@@ -45,3 +45,19 @@ public class KalkulatorHarga {
         }
         return hasil;
     }
+    
+// Menghitung rincian harga lengkap sebuah pesanan.
+    public RincianHarga hitung(Jadwal jadwal, int jumlah, Voucher voucher, Pembayaran metode)
+            throws PembayaranGagalException {
+        double perKursi = hargaPerKursi(jadwal);
+        double subtotal = perKursi * jumlah;
+        double diskon = 0;
+        if (voucher != null) {
+            diskon = Math.round(subtotal * voucher.getPersen() / 100.0 / 100.0) * 100.0;
+        }
+        double setelahDiskon = subtotal - diskon;
+        double totalBayar = metode.proses(setelahDiskon);
+        double biayaAdmin = totalBayar - setelahDiskon;
+        return new RincianHarga(perKursi, jumlah, voucher, diskon, biayaAdmin, totalBayar, aturanBerlaku(jadwal));
+    }
+}
