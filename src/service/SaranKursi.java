@@ -13,3 +13,15 @@ public class SaranKursi {
     public SaranKursi(List<String> kursi, boolean berdampingan) {
         this.kursi = new ArrayList<>(kursi);
         this.berdampingan = berdampingan;
+            }
+
+    // Mengambil kursi yang disarankan.
+    public List<String> getKursi() {
+        return new ArrayList<>(kursi);
+    }
+
+    // Menunjukkan apakah kursinya berdampingan.
+    public boolean isBerdampingan() {
+        return berdampingan;
+    }
+}
