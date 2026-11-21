@@ -271,3 +271,92 @@ public class PemesananService {
         return checkIn(kode, LocalDate.now());
     }
 
+
+    // Mencari pesanan berdasarkan kode pemesanan tanpa membedakan huruf besar dan kecil.
+    public Pemesanan cariKode(String kode) throws DataTidakDitemukanException {
+        for (Pemesanan p : daftar) {
+            if (p.getKodeBooking().equalsIgnoreCase(kode.trim())) {
+                return p;
+            }
+        }
+        throw new DataTidakDitemukanException("Pesanan", kode);
+    }
+
+    // Mengembalikan riwayat pesanan pengguna mulai dari pesanan terbaru.
+    public List<Pemesanan> getRiwayat(User user) {
+        return daftar.stream()
+                .filter(p -> p.getUser().getUsername().equalsIgnoreCase(user.getUsername()))
+                .sorted(Comparator.comparing(Pemesanan::getWaktuPesan).reversed())
+                .collect(Collectors.toList());
+    }
+
+    // Mengembalikan pesanan yang menunggu konfirmasi mulai dari pesanan terlama.
+    public List<Pemesanan> getMenunggu() {
+        return daftar.stream()
+                .filter(p -> p.getStatus() == StatusPesanan.MENUNGGU)
+                .sorted(Comparator.comparing(Pemesanan::getWaktuPesan))
+                .collect(Collectors.toList());
+    }
+
+    // Mengembalikan seluruh pesanan mulai dari pesanan terbaru.
+    public List<Pemesanan> getAll() {
+        return daftar.stream()
+                .sorted(Comparator.comparing(Pemesanan::getWaktuPesan).reversed())
+                .collect(Collectors.toList());
+    }
+
+    // Memeriksa apakah ada pesanan dengan ID jadwal yang diberikan.
+    public boolean adaPesananUntukJadwal(String jadwalId) {
+        return daftar.stream().anyMatch(p -> p.getJadwal().getId().equalsIgnoreCase(jadwalId));
+    }
+
+
+    // Menjumlahkan harga pesanan yang statusnya diperhitungkan sebagai penjualan.
+    public double totalPendapatan() {
+        return daftar.stream()
+                .filter(p -> p.getStatus().dihitungSebagaiPenjualan())
+                .mapToDouble(Pemesanan::getTotalHarga)
+                .sum();
+    }
+
+    // Menghitung tiket terjual berdasarkan jumlah kursi pada pesanan yang dihitung sebagai penjualan.
+    public int totalTiketTerjual() {
+        return daftar.stream()
+                .filter(p -> p.getStatus().dihitungSebagaiPenjualan())
+                .mapToInt(Pemesanan::getJumlahKursi)
+                .sum();
+    }
+
+    // Mengurutkan film dari penjualan tiket terbanyak, lalu menurut abjad jika jumlahnya sama.
+    public Map<String, Integer> peringkatFilm() {
+        Map<String, Integer> hitung = new HashMap<>();
+        for (Pemesanan p : daftar) {
+            if (p.getStatus().dihitungSebagaiPenjualan()) {
+                hitung.merge(p.getJadwal().getFilm().getJudul(), p.getJumlahKursi(), Integer::sum);
+            }
+        }
+        return hitung.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed()
+                        .thenComparing(Map.Entry.comparingByKey()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> a, LinkedHashMap::new));
+    }
+
+    // Mengelompokkan jumlah tiket terjual berdasarkan jam mulai tayang.
+    public Map<Integer, Integer> tiketPerJam() {
+        return daftar.stream()
+                .filter(p -> p.getStatus().dihitungSebagaiPenjualan())
+                .collect(Collectors.groupingBy(p -> p.getJadwal().getJam().getHour(), TreeMap::new,
+                        Collectors.summingInt(Pemesanan::getJumlahKursi)));
+    }
+
+    // Menghitung pesanan untuk setiap status, termasuk status dengan nol pesanan.
+    public Map<StatusPesanan, Long> jumlahPerStatus() {
+        Map<StatusPesanan, Long> hasil = daftar.stream()
+                .collect(Collectors.groupingBy(Pemesanan::getStatus,
+                        () -> new EnumMap<>(StatusPesanan.class), Collectors.counting()));
+        for (StatusPesanan s : StatusPesanan.values()) {
+            hasil.putIfAbsent(s, 0L);
+        }
+        return hasil;
+    }
+}
