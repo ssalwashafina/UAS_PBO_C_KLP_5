@@ -24,9 +24,30 @@ public class User extends Akun {
     // Mengubah tanggal lahir.
     public void setTanggalLahir(LocalDate tanggalLahir) {
         this.tanggalLahir = tanggalLahir;
-    }
+    } 
 
-    // Menghitung umur pada tanggal tertentu.
+// Menghitung umur pada tanggal tertentu.
     public int getUmur(LocalDate acuan) {
         return Period.between(tanggalLahir, acuan).getYears();
     }
+
+    // Menghitung umur saat ini.
+    public int getUmur() {
+        return getUmur(LocalDate.now());
+    }
+
+    @Override
+    public void tampilkanMenu() {
+        TampilanCLI.menu("MENU USER - " + getNama(), "Logout",
+                "Daftar Film & Jadwal Tayang",
+                "Cari / Urutkan Film",
+                "Pesan Tiket",
+                "Riwayat Pesanan",
+                "Lihat Tiket / Struk");
+    }
+
+    @Override
+    public String getPeran() {
+        return "USER";
+    }
+}
