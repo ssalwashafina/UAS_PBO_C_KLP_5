@@ -175,3 +175,99 @@ public class PemesananService {
         daftar.add(p);
         return p;
     }
+
+    // Membuat kode pemesanan dari tanggal dan nomor urut pesanan pada hari tersebut.
+    private String kodeBookingBaru(LocalDate hari) {
+        String awalan = "BK-" + hari.format(DateTimeFormatter.BASIC_ISO_DATE) + "-";
+        int urut = 1;
+        for (Pemesanan p : daftar) {
+            if (p.getKodeBooking().startsWith(awalan)) {
+                urut++;
+            }
+        }
+        return awalan + String.format("%03d", urut);
+    }
+
+    // Memuat pesanan dan menahan kembali kursinya jika status pesanan mengharuskannya.
+    public void muat(Pemesanan p) throws KursiTidakTersediaException {
+        if (p.getStatus().menahanKursi()) {
+            p.getJadwal().tahanKursi(p.getKursi(), p.getKodeBooking());
+        }
+        daftar.add(p);
+    }
+
+
+    // Menolak pesanan yang kedaluwarsa pada waktu yang diberikan, melepas kursinya, dan mengembalikan jumlah pesanan tersebut.
+    public int perbaruiKedaluwarsa(LocalDateTime sekarang) {
+        int jumlah = 0;
+        for (Pemesanan p : daftar) {
+            if (p.isKedaluwarsa(sekarang, batasMenit)) {
+                p.setStatus(StatusPesanan.DITOLAK);
+                p.setAlasan("Kedaluwarsa: pembayaran belum terkonfirmasi dalam " + batasMenit + " menit.");
+                p.getJadwal().lepasKursi(p.getKodeBooking());
+                jumlah++;
+            }
+        }
+        return jumlah;
+    }
+
+    // Memproses pesanan kedaluwarsa berdasarkan waktu saat ini.
+    public int perbaruiKedaluwarsa() {
+        return perbaruiKedaluwarsa(LocalDateTime.now());
+    }
+
+    // Mengubah status pesanan dari MENUNGGU menjadi TERVERIFIKASI.
+    public Pemesanan konfirmasi(String kode) throws DataTidakDitemukanException {
+        perbaruiKedaluwarsa();
+        Pemesanan p = cariKode(kode);
+        periksaMenunggu(p, "dikonfirmasi");
+        p.setStatus(StatusPesanan.TERVERIFIKASI);
+        return p;
+    }
+
+    // Menolak pesanan yang masih menunggu, mencatat alasannya, dan melepas kursinya.
+    public Pemesanan tolak(String kode, String alasan) throws DataTidakDitemukanException {
+        perbaruiKedaluwarsa();
+        Pemesanan p = cariKode(kode);
+        periksaMenunggu(p, "ditolak");
+        p.setStatus(StatusPesanan.DITOLAK);
+        p.setAlasan(alasan);
+        p.getJadwal().lepasKursi(p.getKodeBooking());
+        return p;
+    }
+
+    // Memastikan pesanan masih berstatus MENUNGGU sebelum dikonfirmasi atau ditolak.
+    private void periksaMenunggu(Pemesanan p, String aksi) {
+        if (p.getStatus() != StatusPesanan.MENUNGGU) {
+            throw new IllegalStateException("Pesanan " + p.getKodeBooking() + " berstatus "
+                    + p.getStatus().getLabel() + ", jadi tidak bisa " + aksi + ".");
+        }
+    }
+
+    // Menandai tiket sebagai DIGUNAKAN setelah memeriksa status dan kesesuaian tanggal tayang.
+    public Pemesanan checkIn(String kode, LocalDate hari) throws DataTidakDitemukanException {
+        perbaruiKedaluwarsa();
+        Pemesanan p = cariKode(kode);
+        switch (p.getStatus()) {
+            case DIGUNAKAN:
+                throw new IllegalStateException("Tiket " + p.getKodeBooking() + " SUDAH DIGUNAKAN sebelumnya.");
+            case MENUNGGU:
+                throw new IllegalStateException("Tiket " + p.getKodeBooking() + " belum dikonfirmasi pembayarannya.");
+            case DITOLAK:
+                throw new IllegalStateException("Tiket " + p.getKodeBooking() + " ditolak, tidak sah.");
+            default:
+                break;
+        }
+        if (!p.getJadwal().getTanggal().equals(hari)) {
+            throw new IllegalStateException("Tiket ini untuk tayangan tanggal "
+                    + p.getJadwal().getTanggal().format(util.TampilanCLI.FORMAT_TANGGAL) + ", bukan hari ini.");
+        }
+        p.setStatus(StatusPesanan.DIGUNAKAN);
+        return p;
+    }
+
+    // Mencatat penggunaan tiket dengan tanggal hari ini sebagai tanggal pemeriksaan.
+    public Pemesanan checkIn(String kode) throws DataTidakDitemukanException {
+        return checkIn(kode, LocalDate.now());
+    }
+
