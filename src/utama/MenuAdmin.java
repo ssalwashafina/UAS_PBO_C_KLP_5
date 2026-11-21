@@ -315,3 +315,132 @@ public class MenuAdmin extends Menu {
             System.out.println("  Jadwal dihapus.");
         }
     }
+
+    // Menampilkan pesanan yang menunggu konfirmasi atau seluruh transaksi.
+    private void daftarPesanan() {
+        System.out.println("\n  1. Hanya yang MENUNGGU konfirmasi   2. Semua pesanan");
+        boolean semua = InputHelper.angka("Pilih: ", 1, 2) == 2;
+        TampilanCLI.header(semua ? "SEMUA PESANAN" : "PESANAN MENUNGGU KONFIRMASI");
+        TabelData.pesanan(semua ? pemesananService.getAll() : pemesananService.getMenunggu());
+        InputHelper.enter();
+    }
+
+    // Mengonfirmasi atau menolak pembayaran pesanan.
+    private void prosesPesanan() throws BioskopException {
+        List<Pemesanan> menunggu = pemesananService.getMenunggu();
+        if (menunggu.isEmpty()) {
+            System.out.println("\n  Tidak ada pesanan yang menunggu konfirmasi.");
+            InputHelper.enter();
+            return;
+        }
+        TampilanCLI.header("PESANAN MENUNGGU KONFIRMASI");
+        TabelData.pesanan(menunggu);
+        String kode = InputHelper.baca("\nKode booking (Enter = batal): ");
+        if (kode.isEmpty()) {
+            return;
+        }
+        Pemesanan p = pemesananService.cariKode(kode);
+        TampilanCLI.struk(p, pemesananService.getBatasMenit());
+        System.out.println("\n  1. Konfirmasi (pembayaran SUDAH diterima)");
+        System.out.println("  2. Tolak (pembayaran BELUM diterima)");
+        System.out.println("  0. Batal");
+        int aksi = InputHelper.angka("Pilih: ", 0, 2);
+        if (aksi == 1) {
+            if (InputHelper.ya("  Yakin uang " + TampilanCLI.rupiah(p.getTotalHarga()) + " sudah masuk?")) {
+                pemesananService.konfirmasi(p.getKodeBooking());
+                System.out.println("\n  Pesanan " + p.getKodeBooking() + " TERVERIFIKASI. User bisa melihat tiketnya.");
+            }
+        } else if (aksi == 2) {
+            String alasan = InputHelper.teksDefault("Alasan penolakan", "Pembayaran belum diterima");
+            pemesananService.tolak(p.getKodeBooking(), alasan);
+            System.out.println("\n  Pesanan " + p.getKodeBooking() + " DITOLAK. Kursi dilepas kembali.");
+        }
+        InputHelper.enter();
+    }
+
+    // Memeriksa keabsahan tiket saat pengguna masuk bioskop.
+    private void checkIn() throws BioskopException {
+        String kode = InputHelper.teks("\nKode booking di tiket: ");
+        Pemesanan p = pemesananService.checkIn(kode);
+        System.out.println("\n  TIKET SAH. Silakan masuk.");
+        TampilanCLI.baris("Pemesan", p.getUser().getNama());
+        TampilanCLI.baris("Film", p.getJadwal().getFilm().getJudul());
+        TampilanCLI.baris("Studio", p.getJadwal().getStudio().getNama());
+        TampilanCLI.baris("Jam", p.getJadwal().getJam().toString());
+        TampilanCLI.baris("Kursi", String.join(", ", p.getKursi()));
+        InputHelper.enter();
+    }
+
+    // Menampilkan laporan pendapatan dan statistik penjualan bioskop.
+    private void laporan() {
+        TampilanCLI.header("LAPORAN & DASHBOARD");
+        TampilanCLI.baris("Pendapatan", TampilanCLI.rupiah(pemesananService.totalPendapatan())
+                + " (pesanan terverifikasi dan terpakai)");
+        TampilanCLI.baris("Tiket terjual", String.valueOf(pemesananService.totalTiketTerjual()));
+        StringBuilder status = new StringBuilder();
+        for (Map.Entry<StatusPesanan, Long> e : pemesananService.jumlahPerStatus().entrySet()) {
+            status.append(e.getKey().getLabel()).append(" ").append(e.getValue()).append("   ");
+        }
+        TampilanCLI.baris("Pesanan", status.toString().trim());
+
+        // Menampilkan peringkat film berdasarkan jumlah tiket terjual.
+        System.out.println("\n  FILM TERLARIS (tiket terjual)");
+        Map<String, Integer> peringkat = pemesananService.peringkatFilm();
+        if (peringkat.isEmpty()) {
+            System.out.println("  (belum ada penjualan)");
+        } else {
+            int tertinggi = peringkat.values().iterator().next();
+            int no = 1;
+            for (Map.Entry<String, Integer> e : peringkat.entrySet()) {
+                int persen = (int) Math.round(100.0 * e.getValue() / tertinggi);
+                System.out.println("  " + no++ + ". " + String.format("%-28s", TampilanCLI.potong(e.getKey(), 28)) + " "
+                        + TampilanCLI.bar(persen, 20) + " " + e.getValue() + " tiket");
+            }
+        }
+
+        // Menampilkan jumlah tiket terjual berdasarkan jam tayang.
+        System.out.println("\n  JAM TAYANG TERSIBUK (tiket terjual)");
+        Map<Integer, Integer> perJam = pemesananService.tiketPerJam();
+        if (perJam.isEmpty()) {
+            System.out.println("  (belum ada penjualan)");
+        } else {
+            int tertinggi = perJam.values().stream().mapToInt(Integer::intValue).max().orElse(1);
+            for (Map.Entry<Integer, Integer> e : perJam.entrySet()) {
+                int persen = (int) Math.round(100.0 * e.getValue() / tertinggi);
+                System.out.println("  " + String.format("%02d:00", e.getKey()) + "  " + TampilanCLI.bar(persen, 20)
+                        + " " + e.getValue() + " tiket");
+            }
+        }
+
+        // Menampilkan persentase kursi terisi pada jadwal mendatang.
+        System.out.println("\n  OKUPANSI JADWAL MENDATANG (kursi terisi)");
+        List<Jadwal> mendatang = jadwalService.getJadwalAktif(LocalDateTime.now());
+        if (mendatang.isEmpty()) {
+            System.out.println("  (tidak ada jadwal mendatang)");
+        } else {
+            int tampil = Math.min(10, mendatang.size());
+            for (Jadwal j : mendatang.subList(0, tampil)) {
+                System.out.println("  " + String.format("%-5s", j.getId()) + " "
+                        + j.getTanggal().format(TampilanCLI.FORMAT_TANGGAL) + " " + j.getJam() + "  "
+                        + String.format("%-26s", TampilanCLI.potong(j.getFilm().getJudul(), 26)) + " "
+                        + TampilanCLI.bar(j.getPersenOkupansi(), 20) + " " + j.getJumlahTerisi() + "/"
+                        + j.getStudio().getKapasitas());
+            }
+            if (mendatang.size() > tampil) {
+                System.out.println("  ... " + tampil + " jadwal terdekat dari " + mendatang.size());
+            }
+            double rata = mendatang.stream().mapToInt(Jadwal::getPersenOkupansi).average().orElse(0);
+            System.out.println("  Rata-rata okupansi seluruh jadwal mendatang: " + Math.round(rata) + "%");
+        }
+        InputHelper.enter();
+    }
+
+    // Mengatur batas waktu konfirmasi pembayaran pesanan.
+    private void aturBatas() {
+        System.out.println("\n  Batas konfirmasi sekarang: " + pemesananService.getBatasMenit() + " menit.");
+        System.out.println("  Pesanan MENUNGGU yang melewati batas ini ditolak otomatis dan kursinya dilepas.");
+        System.out.println("  (Pengaturan ini berlaku selama program berjalan.)");
+        pemesananService.setBatasMenit(InputHelper.angka("Batas baru (menit, 1-1440): ", 1, 1440));
+        System.out.println("  Batas diubah menjadi " + pemesananService.getBatasMenit() + " menit.");
+    }
+}
