@@ -1,0 +1,5 @@
+tipe,username,passwordHash,nama,tanggalLahir
+ADMIN,admin,bf6b5bdb74c79ece9fc0ad0ac9fb0359f9555d4f35a83b2e6ec69ae99e09603d,Administrator,
+USER,budi,a1248e8e02f13a6964333e787eadb93c161a13f47306b6b2729fab02ee5c9832,Budi Santoso,2000-05-12
+USER,salwa,09a241ae8ecf970f6343359fa4180a59eacea2995e26069aa57490b91ed60a1c,salwa shafina,2007-08-18
+USER,sinta,83749a9ebe31831f72d1792391528bdb4d92cbb9b180e0709dbe2fb0abc1fbe3,Sinta Rahma,2012-08-17
