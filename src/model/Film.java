@@ -58,10 +58,6 @@ public class Film implements Comparable<Film> {
     public int getDurasi() {
         return durasi;
     }
-// Mengambil durasi.
-    public int getDurasi() {
-        return durasi;
-    }
 
     // Mengubah durasi.
     public void setDurasi(int durasi) {
@@ -74,7 +70,7 @@ public class Film implements Comparable<Film> {
     // Mengambil rating usia.
     public int getRatingUsia() {
         return ratingUsia;
-        }
+    }
 
     // Mengubah rating usia.
     public void setRatingUsia(int ratingUsia) {
