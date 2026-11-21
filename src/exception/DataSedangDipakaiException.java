@@ -8,3 +8,6 @@ public class DataSedangDipakaiException extends BioskopException {
   // Membuat exception data sedang dipakai.
   public DataSedangDipakaiException(String pesan) {
     super(pesan);
+    }
+}
+
