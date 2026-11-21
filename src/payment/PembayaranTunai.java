@@ -35,7 +35,6 @@ public class PembayaranTunai implements Pembayaran {
 
     @Override
     public String buatInstruksi(String kodeBooking, double totalBayar) {
-        return "Bayar " + TampilanCLI.rupiah(totalBayar) + " tunai di loket.\n"
-                + "Sebutkan kode booking " + kodeBooking + " ke kasir.";
+        return "Bayar " + TampilanCLI.rupiah(totalBayar) + " tunai di loket.\n" + "Sebutkan kode booking " + kodeBooking + " ke kasir.";
     }
 }

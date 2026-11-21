@@ -61,8 +61,7 @@ public final class DataAwal {
         pesanContoh(pemesanan, jadwal, budi, "F002", hariIni.plusDays(2), 16, "C4");
     }
 
-    private static void tambahJadwal(FilmService film, JadwalService jadwal, String filmId, String studioId,
-                                     LocalDate hari, int jam, int menit) {
+    private static void tambahJadwal(FilmService film, JadwalService jadwal, String filmId, String studioId, LocalDate hari, int jam, int menit) {
         try {
             String id = jadwal.buatIdJadwal();
             jadwal.tambah(new Jadwal(id, film.cariById(filmId), jadwal.cariStudio(studioId), hari,

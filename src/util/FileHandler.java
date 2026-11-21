@@ -39,8 +39,7 @@ public class FileHandler {
     private final PemesananService pemesananService;
 
     // Membuat pengelola file.
-    public FileHandler(String folder, AuthService auth, FilmService filmService, JadwalService jadwalService,
-                       PemesananService pemesananService) {
+    public FileHandler(String folder, AuthService auth, FilmService filmService, JadwalService jadwalService, PemesananService pemesananService) {
         this.folder = Paths.get(folder);
         this.auth = auth;
         this.filmService = filmService;

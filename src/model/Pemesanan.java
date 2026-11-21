@@ -25,9 +25,7 @@ public class Pemesanan {
     private String alasan;
 
     // Membuat pesanan baru.
-    public Pemesanan(String kodeBooking, User user, Jadwal jadwal, List<String> kursi, Pembayaran metode,
-                     double hargaPerKursi, Voucher voucher, double diskon, double biayaAdmin, double totalHarga,
-                     LocalDateTime waktuPesan, StatusPesanan status, String alasan) {
+    public Pemesanan(String kodeBooking, User user, Jadwal jadwal, List<String> kursi, Pembayaran metode, double hargaPerKursi, Voucher voucher, double diskon, double biayaAdmin, double totalHarga, LocalDateTime waktuPesan, StatusPesanan status, String alasan) {
         this.kodeBooking = kodeBooking;
         this.user = user;
         this.jadwal = jadwal;
@@ -140,7 +138,6 @@ public class Pemesanan {
 
     @Override
     public String toString() {
-        return kodeBooking + " | " + jadwal.getFilm().getJudul() + " | " + String.join(",", kursi) + " | "
-                + status.getLabel();
+        return kodeBooking + " | " + jadwal.getFilm().getJudul() + " | " + String.join(",", kursi) + " | " + status.getLabel();
     }
 }
