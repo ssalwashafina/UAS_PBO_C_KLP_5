@@ -6,3 +6,4 @@ public class DataSedangDipakaiException extends BioskopException {
 
   private static final long serialVersionUID = 1L;
   // Membuat exception data sedang dipakai.
+  public DataSedangDipakaiException(String pesan) {
