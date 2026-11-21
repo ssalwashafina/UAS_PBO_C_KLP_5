@@ -174,3 +174,144 @@ public class MenuAdmin extends Menu {
             System.out.println("  Film dihapus.");
         }
     }
+
+    // Menampilkan submenu pengelolaan studio.
+    private void kelolaStudio() {
+        boolean lanjut = true;
+        while (lanjut) {
+            TampilanCLI.menu("KELOLA STUDIO", "Kembali", "Lihat semua studio", "Tambah studio", "Ubah studio",
+                    "Hapus studio");
+            switch (InputHelper.angka("Pilih: ", 0, 4)) {
+                case 1:
+                    TabelData.studio(jadwalService.getAllStudio());
+                    break;
+                case 2:
+                    aman(this::tambahStudio);
+                    break;
+                case 3:
+                    aman(this::ubahStudio);
+                    break;
+                case 4:
+                    aman(this::hapusStudio);
+                    break;
+                default:
+                    lanjut = false;
+                    break;
+            }
+            if (lanjut) {
+                fileHandler.simpanSemua();
+            }
+        }
+    }
+
+    // Menentukan tipe studio Regular atau Premium.
+    private TipeStudio tanyaTipe(TipeStudio bawaan) {
+        System.out.println("  1. Regular   2. Premium (harga x1,5)");
+        int p = bawaan == null
+                ? InputHelper.angka("Tipe: ", 1, 2)
+                : InputHelper.angkaDefault("Tipe", 1, 2, bawaan == TipeStudio.REGULAR ? 1 : 2);
+        return p == 1 ? TipeStudio.REGULAR : TipeStudio.PREMIUM;
+    }
+
+    // Menambahkan studio baru beserta kapasitas kursinya.
+    private void tambahStudio() {
+        String id = jadwalService.buatIdStudio();
+        System.out.println("\n  ID studio baru: " + id);
+        String nama = InputHelper.teks("Nama studio: ");
+        TipeStudio tipe = tanyaTipe(null);
+        int baris = InputHelper.angka("Jumlah baris (1-" + Studio.MAKS_BARIS + "): ", 1, Studio.MAKS_BARIS);
+        int kolom = InputHelper.angka("Jumlah kolom (1-" + Studio.MAKS_KOLOM + "): ", 1, Studio.MAKS_KOLOM);
+        jadwalService.tambahStudio(new Studio(id, nama, tipe, baris, kolom));
+        System.out.println("  Studio ditambahkan.");
+    }
+
+    // Mengubah data studio berdasarkan ID.
+    private void ubahStudio() throws BioskopException {
+        TabelData.studio(jadwalService.getAllStudio());
+        Studio lama = jadwalService.cariStudio(InputHelper.teks("ID studio yang diubah: "));
+        System.out.println("  (tekan Enter untuk tetap memakai nilai lama)");
+        String nama = InputHelper.teksDefault("Nama", lama.getNama());
+        TipeStudio tipe = tanyaTipe(lama.getTipe());
+        int baris = InputHelper.angkaDefault("Jumlah baris", 1, Studio.MAKS_BARIS, lama.getJumlahBaris());
+        int kolom = InputHelper.angkaDefault("Jumlah kolom", 1, Studio.MAKS_KOLOM, lama.getJumlahKolom());
+        jadwalService.ubahStudio(new Studio(lama.getId(), nama, tipe, baris, kolom));
+        System.out.println("  Studio diubah.");
+    }
+
+    // Menghapus studio setelah mendapat konfirmasi admin.
+    private void hapusStudio() throws BioskopException {
+        TabelData.studio(jadwalService.getAllStudio());
+        Studio s = jadwalService.cariStudio(InputHelper.teks("ID studio yang dihapus: "));
+        if (InputHelper.ya("  Hapus " + s.getNama() + "?")) {
+            jadwalService.hapusStudio(s.getId());
+            System.out.println("  Studio dihapus.");
+        }
+    }
+
+    // Menampilkan submenu pengelolaan jadwal tayang.
+    private void kelolaJadwal() {
+        boolean lanjut = true;
+        while (lanjut) {
+            TampilanCLI.menu("KELOLA JADWAL TAYANG", "Kembali", "Lihat semua jadwal", "Tambah jadwal",
+                    "Ubah jadwal", "Hapus jadwal");
+            switch (InputHelper.angka("Pilih: ", 0, 4)) {
+                case 1:
+                    TabelData.jadwal(jadwalService.getAll(), pemesananService.getKalkulator());
+                    break;
+                case 2:
+                    aman(this::tambahJadwal);
+                    break;
+                case 3:
+                    aman(this::ubahJadwal);
+                    break;
+                case 4:
+                    aman(this::hapusJadwal);
+                    break;
+                default:
+                    lanjut = false;
+                    break;
+            }
+            if (lanjut) {
+                fileHandler.simpanSemua();
+            }
+        }
+    }
+
+    // Menambahkan jadwal berdasarkan film, studio, dan waktu tayang.
+    private void tambahJadwal() throws BioskopException {
+        TabelData.film(filmService.getAll());
+        Film film = filmService.cariById(InputHelper.teks("ID film: "));
+        TabelData.studio(jadwalService.getAllStudio());
+        Studio studio = jadwalService.cariStudio(InputHelper.teks("ID studio: "));
+        LocalDate tanggal = InputHelper.tanggal("Tanggal tayang");
+        LocalTime jam = InputHelper.jam("Jam mulai");
+        int harga = InputHelper.angka("Harga dasar tiket (Rp): ", 1000, 1000000);
+        Jadwal j = new Jadwal(jadwalService.buatIdJadwal(), film, studio, tanggal, jam, harga);
+        jadwalService.tambah(j);
+        System.out.println("  Jadwal " + j.getId() + " ditambahkan. Selesai pukul " + j.getWaktuSelesai().toLocalTime()
+                + ", harga per kursi " + TampilanCLI.rupiah(pemesananService.getKalkulator().hargaPerKursi(j)) + ".");
+    }
+
+    // Mengubah jadwal tayang berdasarkan ID.
+    private void ubahJadwal() throws BioskopException {
+        TabelData.jadwal(jadwalService.getAll(), pemesananService.getKalkulator());
+        Jadwal lama = jadwalService.cariById(InputHelper.teks("ID jadwal yang diubah: "));
+        System.out.println("  (tekan Enter untuk tetap memakai nilai lama)");
+        Film film = filmService.cariById(InputHelper.teksDefault("ID film", lama.getFilm().getId()));
+        Studio studio = jadwalService.cariStudio(InputHelper.teksDefault("ID studio", lama.getStudio().getId()));
+        LocalDate tanggal = InputHelper.tanggalDefault("Tanggal", lama.getTanggal());
+        LocalTime jam = InputHelper.jamDefault("Jam", lama.getJam());
+        int harga = InputHelper.angkaDefault("Harga dasar (Rp)", 1000, 1000000, (int) lama.getHargaDasar());
+        jadwalService.ubah(new Jadwal(lama.getId(), film, studio, tanggal, jam, harga));
+        System.out.println("  Jadwal diubah.");
+    }
+
+    // Menghapus jadwal setelah mendapat konfirmasi admin.
+    private void hapusJadwal() throws BioskopException {
+        TabelData.jadwal(jadwalService.getAll(), pemesananService.getKalkulator());
+        Jadwal j = jadwalService.cariById(InputHelper.teks("ID jadwal yang dihapus: "));
+        if (InputHelper.ya("  Hapus jadwal " + j + "?")) {
+            jadwalService.hapus(j.getId());
+            System.out.println("  Jadwal dihapus.");
+        }
+    }
