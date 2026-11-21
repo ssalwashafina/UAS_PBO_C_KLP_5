@@ -4,3 +4,4 @@ package exception;
 
 public class DataSedangDipakaiException extends BioskopException {
 
+  private static final long serialVersionUID = 1L;
